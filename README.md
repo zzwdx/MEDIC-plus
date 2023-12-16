@@ -76,4 +76,4 @@ then simply run:
 python eval.py --hits ... --save-name ... --gpu 0
 ```
 
-+ *--hits (check points for H-Score)*
++ *--hits (check points for H-score)*
