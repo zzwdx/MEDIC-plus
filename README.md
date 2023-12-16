@@ -4,7 +4,7 @@
 
 This repository contains the implementation of the unreleased paper **Exploring Dualistic Meta-Learning to Enhance Domain Generalization in Open Set Scenarios**, entended from our *ICCV 2023* paper **Generalizable Decision Boundaries: Dualistic Meta-Learning for Open Set Domain Generalization**. The code will be released within a month (start from December 13, 2023)
 
-![image-20231216120523727](\imgs\image-20231216120523727.png)
+![image-20231216120523727](imgs\image-20231216120523727.png)
 
 ### 2. Dataset Construction
 
