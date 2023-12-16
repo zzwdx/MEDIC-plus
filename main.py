@@ -121,7 +121,7 @@ if __name__ == '__main__':
     parser.add_argument('--without-bcls', action='store_true')
     parser.add_argument('--share-param', action='store_true')
 
-    parser.add_argument('--save-dir', default='/data/wxr/project/ML-osdg/save')
+    parser.add_argument('--save-dir', default='')
     parser.add_argument('--save-name', default='demo')
     parser.add_argument('--save-best-test', action='store_true')
     parser.add_argument('--save-later', action='store_true')
