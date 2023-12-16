@@ -73,6 +73,7 @@ if dataset == 'PACS':
 then simply run:
 
 ```
-python eval.py --save-name ... --gpu 0
+python eval.py --hits ... --save-name ... --gpu 0
 ```
 
++ *--hits (check points for H-Score)*
