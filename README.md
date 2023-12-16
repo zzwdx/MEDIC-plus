@@ -54,7 +54,7 @@ then add options:
 + *--optimize-method Adam*
 + *--num-epoch 5100 (15000 for DomainNet)*
 + *--eval-step 300*
-+ *--lr 6e-6 (to divide the default learning rate 5e-5 by the number of tasks 9)*
++ *--lr 6e-6 (divide the default learning rate 5e-5 by the number of tasks 9)*
 + *--without-bcls*
 
 ```
