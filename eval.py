@@ -16,7 +16,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', default=None)
 
     parser.add_argument('--batch-size', type=int, default=128)
-    parser.add_argument('--hits', type=int, default=10)
+    parser.add_argument('--hits', type=int, default=30)
 
     parser.add_argument('--save-dir', default='')
     parser.add_argument('--save-name', default='demo')
