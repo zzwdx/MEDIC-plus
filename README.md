@@ -6,7 +6,7 @@ This repository contains the implementation of the unreleased paper **Exploring 
 
 ![image-20231216120523727](imgs/image-20231216120523727.png)
 
-### 2. Dataset Construction (Optional)
+### 2. Dataset Construction [Optional]
 
 You can divide the dataset into two folders for training and validation. We provide reference code for automatically dividing data using official split in `data_list/split_kfold.py`.
 
