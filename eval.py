@@ -3,12 +3,12 @@ import torch
 import pickle
 import os
 import sys
-from dataset.dataloader import get_dataloader
-from model.model import MutiClassifier, MutiClassifier_, resnet18_fast, resnet50_fast, ConvNet
+from dataloader.dataloader import get_dataloader
+from model.model import MutiClassifier, MutiClassifier_, resnet18_fast, resnet50_fast, ConvNet, gfnet_fast
 from util.log import log
 from torch.nn import functional as F
 from util.ROC import generate_OSCR
-from train.test import *
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -109,6 +109,8 @@ if __name__ == '__main__':
         net = muticlassifier(net=resnet50_fast(), num_classes=num_classes, feature_dim=2048)
     elif net_name == 'convnet':
         net = muticlassifier(net=ConvNet(), num_classes=num_classes, feature_dim=256)
+    elif net_name == 'gfnet':
+        net = muticlassifier(net=gfnet_fast("/data0/xiran/MEDIC-plus-vit/save/model/pretrain/gfnet-h-ti.pth"), num_classes=num_classes, feature_dim=512)
 
     net.load_state_dict(torch.load(model_path))
 
@@ -180,10 +182,8 @@ if __name__ == '__main__':
 
     log('C classifier:', log_path)
 
-    max_prob_k, _ = torch.max(output_k_sum, 1)
-    max_prob_u, _ = torch.max(output_u_sum, 1)
-    thd_min = min(torch.min(max_prob_k).item(), torch.min(max_prob_u).item())
-    thd_max = max(torch.max(max_prob_k).item(), torch.max(max_prob_u).item())
+    thd_min = 0.6
+    thd_max = 1.0
 
     outlier_range = [thd_min + (thd_max - thd_min) * i / (hits-1) for i in range(hits)]
 
@@ -238,10 +238,8 @@ if __name__ == '__main__':
 ###################################################################################################################
 
     log('B classifier:', log_path)
-    max_prob_k, _ = torch.max(b_output_k_sum[:, 1, :], 1)
-    max_prob_u, _ = torch.max(b_output_u_sum[:, 1, :], 1)
-    thd_min = min(torch.min(max_prob_k).item(), torch.min(max_prob_u).item())
-    thd_max = max(torch.max(max_prob_k).item(), torch.max(max_prob_u).item())
+    thd_min = 0.6
+    thd_max = 1.0
 
     outlier_range = [thd_min + (thd_max - thd_min) * i / (hits-1) for i in range(hits)]
 

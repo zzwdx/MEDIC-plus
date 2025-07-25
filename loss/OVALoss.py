@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+
 class OVALoss(nn.Module):
     def __init__(self):
         super(OVALoss, self).__init__()

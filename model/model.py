@@ -7,20 +7,61 @@ from torch.hub import load_state_dict_from_url
 from torchvision.models.resnet import model_urls
 from torch.nn.parameter import Parameter
 
+from functools import partial
+from .gfnet import GFNetPyramid
+
+
 Parameter.fast = None
 
+
+def replace_layer(module):
+    for name, layer in module.named_children():
+        if isinstance(layer, nn.Linear):
+            in_features = layer.in_features
+            out_features = layer.out_features
+            bias = layer.bias is not None  
+            setattr(module, name, Linear_fw(in_features, out_features, bias=bias))
+        
+        elif isinstance(layer, nn.Conv2d):
+            in_channels = layer.in_channels
+            out_channels = layer.out_channels
+            kernel_size = layer.kernel_size
+            stride = layer.stride
+            padding = layer.padding
+            bias = layer.bias is not None  
+            setattr(module, name, Conv2d_fw(in_channels, out_channels, kernel_size, 
+                                            stride=stride, padding=padding, bias=bias))
+        
+        elif isinstance(layer, nn.BatchNorm2d):
+            num_features = layer.num_features
+            eps = layer.eps
+            momentum = layer.momentum
+            affine = layer.affine
+            track_running_stats = layer.track_running_stats
+            setattr(module, name, BatchNorm2d_fw(num_features, eps=eps, momentum=momentum, 
+                                                 affine=affine, track_running_stats=track_running_stats))
+        
+        elif isinstance(layer, nn.LayerNorm):
+            normalized_shape = layer.normalized_shape
+            eps = layer.eps
+            elementwise_affine = layer.elementwise_affine
+            setattr(module, name, LayerNorm_fw(normalized_shape, eps=eps, 
+                                               elementwise_affine=elementwise_affine))
+        
+        else:
+            replace_layer(layer)
+
+
 class Linear_fw(nn.Linear):
-    def __init__(self, in_features, out_features):
-        super(Linear_fw, self).__init__(in_features, out_features)
+    def __init__(self, in_features, out_features, bias=True):
+        super(Linear_fw, self).__init__(in_features=in_features, out_features=out_features, bias=bias)
 
     def forward(self, x):
-        if self.weight.fast is not None and self.bias.fast is not None:
-            out = F.linear(x, self.weight.fast,
-                           self.bias.fast)
-        else:
-            out = super(Linear_fw, self).forward(x)
-        return out
-
+        weight = self.weight if self.weight is None or self.weight.fast is None else self.weight.fast
+        bias = self.bias if self.bias is None or self.bias.fast is None else self.bias.fast
+       
+        return F.linear(x, weight, bias)
+        
 
 class Conv2d_fw(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=True):
@@ -28,23 +69,16 @@ class Conv2d_fw(nn.Conv2d):
                                         bias=bias)
 
     def forward(self, x):
-        if self.bias is None:
-            if self.weight.fast is not None:
-                out = F.conv2d(x, self.weight.fast, None, stride=self.stride, padding=self.padding)
-            else:
-                out = super(Conv2d_fw, self).forward(x)
-        else:
-            if self.weight.fast is not None and self.bias.fast is not None:
-                out = F.conv2d(x, self.weight.fast, self.bias.fast, stride=self.stride, padding=self.padding)
-            else:
-                out = super(Conv2d_fw, self).forward(x)
+        weight = self.weight if self.weight is None or self.weight.fast is None else self.weight.fast
+        bias = self.bias if self.bias is None or self.bias.fast is None else self.bias.fast
 
-        return out
+        return F.conv2d(x, weight, bias, stride=self.stride, padding=self.padding)
 
 
 class BatchNorm2d_fw(nn.BatchNorm2d):
-    def __init__(self, num_features):
-        super(BatchNorm2d_fw, self).__init__(num_features)
+    def __init__(self, num_features, eps=1e-5, momentum=0.1, affine=True, track_running_stats=True):
+        super(BatchNorm2d_fw, self).__init__(num_features=num_features, eps=eps, momentum=momentum, 
+                                                 affine=affine, track_running_stats=track_running_stats)
 
     def forward(self, input):
         self._check_input_dim(input)
@@ -62,31 +96,30 @@ class BatchNorm2d_fw(nn.BatchNorm2d):
                 else:
                     exponential_average_factor = self.momentum
 
-        """ Decide whether the mini-batch stats should be used for normalization rather than the buffers.
-        Mini-batch stats are used in training mode, and in eval mode when buffers are None.
-        """
         if self.training:
             bn_training = True
         else:
             bn_training = (self.running_mean is None) and (self.running_var is None)
 
-        """Buffers are only updated if they are to be tracked and we are in training mode. Thus they only need to be
-        passed when the update should occur (i.e. in training mode when they are tracked), or when buffer stats are
-        used for normalization (i.e. in eval mode when buffers are not None).
-        """
+        weight = self.weight if self.weight is None or self.weight.fast is None else self.weight.fast
+        bias = self.bias if self.bias is None or self.bias.fast is None else self.bias.fast
 
-        if self.weight.fast is not None and self.bias.fast is not None:
-            return F.batch_norm(
+        return F.batch_norm(
             input,
             self.running_mean if not self.training or self.track_running_stats else None,
             self.running_var if not self.training or self.track_running_stats else None,
-            self.weight.fast, self.bias.fast, bn_training, exponential_average_factor, self.eps)
-        else:
-            return F.batch_norm(
-                input,
-                self.running_mean if not self.training or self.track_running_stats else None,
-                self.running_var if not self.training or self.track_running_stats else None,
-                self.weight, self.bias, bn_training, exponential_average_factor, self.eps)
+            weight, bias, bn_training, exponential_average_factor, self.eps)
+
+
+class LayerNorm_fw(nn.LayerNorm):
+    def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True):
+        super(LayerNorm_fw, self).__init__(normalized_shape, eps, elementwise_affine=elementwise_affine)
+
+    def forward(self, input):
+        weight = self.weight if self.weight is None or self.weight.fast is None else self.weight.fast
+        bias = self.bias if self.bias is None or self.bias.fast is None else self.bias.fast
+        
+        return F.layer_norm(input, self.normalized_shape, weight, bias, self.eps)
 
 
 class BasicBlock(nn.Module):
@@ -285,6 +318,7 @@ class MutiClassifier(nn.Module):
         nn.init.xavier_uniform_(self.b_classifier.weight, .1)
         nn.init.constant_(self.b_classifier.bias, 0.)
 
+
     def forward(self, x):
         x = self.net(x)
         x = self.classifier(x)
@@ -332,7 +366,6 @@ class MutiClassifier_(nn.Module):
         return x1, x2
 
 
-
 def resnet18_fast(progress=True):
     """ResNet-18 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
@@ -356,6 +389,23 @@ def resnet50_fast(progress=True):
                                           progress=progress)
     model.load_state_dict(state_dict, strict=False)
     del model.fc
+
+    return model
+    
+
+def gfnet_fast(model_path, progress=True):
+    model = GFNetPyramid(
+        img_size=224, 
+        patch_size=4, embed_dim=[64, 128, 256, 512], depth=[3, 3, 10, 3],
+        mlp_ratio=[4, 4, 4, 4],
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.1,
+    )
+
+    replace_layer(model)
+
+    state_dict = torch.load(model_path)
+    model.load_state_dict(state_dict['model'], strict=False)
+    del model.head
 
     return model
 

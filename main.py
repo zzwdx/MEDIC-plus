@@ -2,14 +2,15 @@ import argparse
 import torch
 import pickle
 import os
-from dataset.dataloader import get_dataloader, get_domain_specific_dataloader
-from model.model import MutiClassifier, MutiClassifier_, resnet18_fast, resnet50_fast, ConvNet
+from dataloader.dataloader import get_dataloader, get_domain_specific_dataloader
+from model.model import MutiClassifier, MutiClassifier_, resnet18_fast, resnet50_fast, ConvNet, gfnet_fast
 from optimizer.optimizer import get_optimizer, get_scheduler
 from loss.OVALoss import OVALoss
 from train.test import *
 from util.log import log
 from util.util import *
 import types
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -39,7 +40,6 @@ if __name__ == '__main__':
     #     ])
     # parser.add_argument('--unknown-classes', nargs='+', default=[ 
             
-
     #     ])
 
     # parser.add_argument('--dataset', default='DigitsDG')
@@ -108,13 +108,14 @@ if __name__ == '__main__':
     parser.add_argument('--task-d', type=int, default=3)
     parser.add_argument('--task-c', type=int, default=3)
     parser.add_argument('--task-per-step', nargs='+', type=int, default=[3, 3, 3])
+    parser.add_argument('--selection-mode', default='hard') # random, hard
 
     parser.add_argument('--net-name', default='resnet50')
     parser.add_argument('--optimize-method', default="SGD")
     parser.add_argument('--schedule-method', default='StepLR')
     parser.add_argument('--num-epoch', type=int, default=6000)
     parser.add_argument('--eval-step', type=int, default=300)
-    parser.add_argument('--lr', type=float, default=2e-4) 
+    parser.add_argument('--lr', type=float, default=2e-4) # Alpha (meta-lr) has been calculated in the following code, so it is set to 1/t of the default learning rate.
     parser.add_argument('--meta-lr', type=float, default=1e-2)
     parser.add_argument('--nesterov', action='store_true')
     parser.add_argument('--without-cls', action='store_true')
@@ -145,6 +146,7 @@ if __name__ == '__main__':
     task_d = args.task_d
     task_c = args.task_c
     task_per_step = args.task_per_step
+    selection_mode = args.selection_mode
     net_name = args.net_name
     optimize_method = args.optimize_method
     schedule_method = args.schedule_method
@@ -231,22 +233,23 @@ if __name__ == '__main__':
     num_domain = len(source_domain)
     num_classes = len(known_classes)
 
-    class_index = [i for i in range(num_classes)]
-    group_length = (num_classes-1) // 10 + 1
+    domain_index_list = [i for i in range(num_domain)]
+    class_index_list = [i for i in range(num_classes)]
 
-    if dataset == "OfficeHome" and len(unknown_classes) == 0:
-        group_length = 6
-    elif dataset == 'TerraIncognita' and len(unknown_classes) == 0:
-        group_length = 2
+    num_group = 10 if num_classes >= 10 else num_classes
+
+    if dataset == 'TerraIncognita' and len(unknown_classes) == 0:
+        num_group = 5
     elif dataset == 'DomainNet' and len(unknown_classes) == 0:
-        group_length = 35
+        num_group = 20
 
-    log('Group length: {}'.format(group_length), log_path)
-    
-    group_index_list = [i for i in range((num_classes-1)//group_length + 1)]
-    num_group = len(group_index_list)
- 
-    domain_specific_loader, val_k = get_domain_specific_dataloader(root_dir = train_dir, domain=source_domain, classes=known_classes, group_length=group_length, batch_size=sub_batch_size, small_img=small_img, crossval=crossval and random_split)
+    group_index_list = [i for i in range(num_group)]
+    classes_partition = split_classes(classes_list=known_classes, index_list=class_index_list, n=num_group)
+    group_length_list = [len(g) for g in classes_partition]
+
+    domain_specific_loader, val_k = get_domain_specific_dataloader(root_dir=train_dir, domain=source_domain, classes=known_classes, classes_partition=classes_partition, batch_size=sub_batch_size, small_img=small_img, crossval=crossval and random_split)
+
+
     if crossval and val_k == None:
         val_k, *_ = get_dataloader(root_dir=val_dir, domain=source_domain, classes=known_classes, batch_size=batch_size, get_domain_label=False, get_class_label=True, instr="val", small_img=small_img, shuffle=False, drop_last=False, num_workers=4)
 
@@ -262,10 +265,12 @@ if __name__ == '__main__':
     log('Target domain: {}'.format(target_domain), log_path)
     log('Known classes: {}'.format(known_classes), log_path)
     log('Unknown classes: {}'.format(unknown_classes), log_path)
+    log('Number of class groups: {}'.format(num_group), log_path)
     log('Batch size: {}'.format(batch_size), log_path)
     log('Number of task(domain): {}'.format(task_d), log_path)
     log('Number of task(class): {}'.format(task_c), log_path)
     log('Tasks per step: {}'.format(task_per_step), log_path)
+    log('Selection mode: {}'.format(selection_mode), log_path)
     log('CrossVal: {}'.format(crossval), log_path)
     log('Loading models...', log_path)
 
@@ -280,19 +285,21 @@ if __name__ == '__main__':
         net = muticlassifier(net=resnet50_fast(), num_classes=num_classes, feature_dim=2048)
     elif net_name == "convnet":
         net = muticlassifier(net=ConvNet(), num_classes=num_classes, feature_dim=256)
-
+    elif net_name == 'gfnet':
+        net = muticlassifier(net=gfnet_fast("/data0/xiran/MEDIC-plus-vit/save/model/pretrain/gfnet-h-ti.pth"), num_classes=num_classes, feature_dim=512)
 
     net = net.to(device)
     
     if optimize_method == 'SGD':
         optimizer = get_optimizer(net=net, instr=optimize_method, lr=lr, nesterov=nesterov)
         scheduler = get_scheduler(optimizer=optimizer, instr=schedule_method, step_size=int(num_epoch*0.8), gamma=0.1)
-    elif optimize_method == 'Adam':
+    elif optimize_method in ['Adam', 'AdamW']:
         optimizer = get_optimizer(net=net, instr=optimize_method, lr=lr)
         scheduler = types.SimpleNamespace(step=lambda: 0)
 
     log('Network: {}'.format(net_name), log_path)
     log('Number of epoch: {}'.format(num_epoch), log_path)
+    log('Eval step: {}'.format(eval_step), log_path)
     log('Optimize method: {}'.format(optimize_method), log_path)
     log('Learning rate: {}'.format(lr), log_path)
     log('Meta learning rate: {}'.format(meta_lr), log_path)
@@ -333,10 +340,7 @@ if __name__ == '__main__':
         ovaloss = lambda *args: 0
 
 
-    domain_index_list = [i for i in range(num_domain)]
-    domain_split = divide_list(shuffle_list(domain_index_list), task_d)
-    group_split = divide_list(shuffle_list(group_index_list), task_c)
-    task_pool = shuffle_list([(id, ig) for id in range(task_d) for ig in range(task_c)])
+    task_pool = get_task_pool(task_d=task_d, task_c=task_c, domain_index_list=domain_index_list, group_index_list=group_index_list, group_length_list=group_length_list, net=net, domain_specific_loader=domain_specific_loader, device=device, mode=selection_mode)
    
 
     fast_parameters = list(net.parameters())
@@ -352,9 +356,7 @@ if __name__ == '__main__':
         input_sum = []
         label_sum = []
 
-        for id, ig in task_pool:
-            domain_index = domain_split[id]
-            group_index = group_split[ig]
+        for domain_index, group_index in task_pool:
         
             for i in domain_index:
                 domain_specific_loader[i].keep(group_index)
@@ -405,17 +407,17 @@ if __name__ == '__main__':
             else:
                 weight.grad = (weight - weight.fast) / meta_lr   
 
-        # update original optimizers
+        # update with original optimizers
         optimizer.step()  
 
-        domain_split = divide_list(shuffle_list(domain_index_list), task_d)
-        group_split = divide_list(shuffle_list(group_index_list), task_c) 
-        task_pool = shuffle_list([(id, ig) for id in range(task_d) for ig in range(task_c)]) 
+       
 
         fast_parameters = list(net.parameters())
         for weight in net.parameters():
             weight.fast = None
         net.zero_grad()
+
+        task_pool = get_task_pool(task_d=task_d, task_c=task_c, domain_index_list=domain_index_list, group_index_list=group_index_list, group_length_list=group_length_list, net=net, domain_specific_loader=domain_specific_loader, device=device, mode=selection_mode) 
 
         if (epoch+1) % eval_step == 0:      
        

@@ -1,7 +1,8 @@
 from torchvision import transforms
 from torch.utils.data import DataLoader, ConcatDataset, random_split
-from dataset.dataset import SingleClassData, SingleDomainData, MultiDomainData
+from dataloader.dataset import SingleClassData, MultiClassData, MultiDomainData
 from util.util import *
+
 
 def get_transform(instr, small_img=False, color_jitter=True, random_grayscale=True):
     if small_img == False:
@@ -75,15 +76,15 @@ def get_dataloader(root_dir, domain, classes, batch_size, domain_class_dict=None
     return dataloader, val_loader
 
 
-def get_domain_specific_dataloader(root_dir, domain, classes, group_length, batch_size, small_img, split_rate=0.8, crossval=False, val_workers=4):
+def get_domain_specific_dataloader(root_dir, domain, classes, classes_partition, batch_size, small_img, split_rate=0.8, crossval=False, val_workers=4):
     domain_specific_loader = []
     val_list = [] 
 
-    for domain_name in domain: 
+    for dom in domain: 
         dataloader_list = []
-        if group_length == 1:
-            for i, class_name in enumerate(classes):
-                dataset = SingleClassData(root_dir=root_dir, domain=domain_name, classes=class_name, domain_label=-1, classes_label=i, transform=get_transform("train", small_img=small_img))
+        if len(classes_partition) == len(classes):
+            for i, cls in enumerate(classes):
+                dataset = SingleClassData(root_dir=root_dir, domain=dom, classes=cls, domain_label=-1, classes_label=i, transform=get_transform("train", small_img=small_img))
 
                 if crossval:
                     train_size = int(len(dataset)*split_rate)
@@ -95,20 +96,20 @@ def get_domain_specific_dataloader(root_dir, domain, classes, group_length, batc
 
                 loader = DataLoader(dataset=scd, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=1)
                 dataloader_list.append(loader)
+
         else:
-            classes_partition = split_classes(classes_list=classes, index_list=[i for i in range(len(classes))], n=group_length)
-            for class_name, class_to_idx in classes_partition:
-                dataset = SingleDomainData(root_dir=root_dir, domain=domain_name, classes=class_name, domain_label=-1, get_classes_label=True, class_to_idx=class_to_idx, transform=get_transform("train", small_img=small_img))
+            for class_to_idx in classes_partition:
+                dataset = MultiClassData(root_dir=root_dir, domain=dom, classes=class_to_idx.keys(), domain_label=-1, get_classes_label=True, class_to_idx=class_to_idx, transform=get_transform("train", small_img=small_img))
 
                 if crossval:
                     train_size = int(len(dataset)*split_rate)
                     val_size = len(dataset) - train_size
-                    sgd, val = random_split(dataset, [train_size, val_size])
+                    sdd, val = random_split(dataset, [train_size, val_size])
                     val_list.append(val)
                 else:
-                    sgd = dataset
+                    sdd = dataset
 
-                loader = DataLoader(dataset=sgd, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=1)
+                loader = DataLoader(dataset=sdd, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=1)
                 dataloader_list.append(loader)
 
         domain_specific_loader.append(ConnectedDataIterator(dataloader_list=dataloader_list, batch_size=batch_size))
