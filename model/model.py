@@ -19,7 +19,7 @@ def replace_layer(module):
         if isinstance(layer, nn.Linear):
             in_features = layer.in_features
             out_features = layer.out_features
-            bias = layer.bias is not None  
+            bias = layer.bias is not None 
             setattr(module, name, Linear_fw(in_features, out_features, bias=bias))
         
         elif isinstance(layer, nn.Conv2d):
@@ -28,7 +28,7 @@ def replace_layer(module):
             kernel_size = layer.kernel_size
             stride = layer.stride
             padding = layer.padding
-            bias = layer.bias is not None  
+            bias = layer.bias is not None
             setattr(module, name, Conv2d_fw(in_channels, out_channels, kernel_size, 
                                             stride=stride, padding=padding, bias=bias))
         
