@@ -97,7 +97,7 @@ def get_args():
     parser.add_argument('--random-split', action='store_true')
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--batch-size', type=int, default=16)
-    parser.add_argument('--algorithm', default='medic')
+    parser.add_argument('--algorithm', default='medic') # arith
     parser.add_argument('--task-d', type=int, default=3)
     parser.add_argument('--task-c', type=int, default=3)
     parser.add_argument('--task-per-step', nargs='+', type=int, default=[3, 3, 3])
@@ -118,7 +118,6 @@ def get_args():
 
     parser.add_argument('--save-dir', default='/data/wxr/MEDIC-plus/save')
     parser.add_argument('--save-name', default='demo')
-    parser.add_argument('--save-best-test', action='store_true')
     parser.add_argument('--save-later', action='store_true')
 
     parser.add_argument('--num-epoch-before', type=int, default=0)
@@ -160,7 +159,6 @@ share_param = args.share_param
 save_dir = args.save_dir
 save_name = args.save_name   
 save_later = args.save_later
-save_best_test = args.save_best_test
 num_epoch_before = args.num_epoch_before
 crossval = True
 

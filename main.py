@@ -14,7 +14,6 @@ from train.ml import *
 import types
 
 
-
 if __name__ == '__main__':
 
     logger = Logger(log_path)
@@ -49,7 +48,6 @@ if __name__ == '__main__':
     logger.log_params(
         GPU=gpu,
         SaveName=save_name,
-        SaveBestTest=save_best_test,
         SaveLater=save_later,
         Dataset=dataset,
         SourceDomain=source_domain,
@@ -158,10 +156,7 @@ if __name__ == '__main__':
 
     if num_epoch_before != 0:
         logger.log('Loading state dict...')  
-        if save_best_test == False:
-            net.load_state_dict(torch.load(model_val_path))
-        else:
-            net.load_state_dict(torch.load(model_test_path))
+        net.load_state_dict(torch.load(model_val_path))
         for epoch in range(num_epoch_before):
             scheduler.step()
         logger.log_params(
@@ -248,9 +243,7 @@ if __name__ == '__main__':
 
         # update with original optimizers
         optimizer.step()  
-
-        
-     
+    
 
         fast_parameters = list(net.parameters())
         load_fast_weights(net, None)
@@ -261,10 +254,8 @@ if __name__ == '__main__':
         if (epoch+1) % eval_step == 0:      
        
             net.eval()  
-
             recall['va'], recall['ta'], recall['oscrc'], recall['oscrb'] = eval_all(net, val_k, test_k, test_u, log_path, epoch, device)
             update_recall(net, recall, log_path, model_val_path)
-
             
         if epoch+1 == renovate_step:
                 logger.log("Reset accuracy history...")

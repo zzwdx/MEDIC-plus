@@ -36,10 +36,10 @@ def split_classes(classes_list, index_list, n):
     return classes_partition
 
 
-def compute_transition_matrix(logits: torch.Tensor, labels: torch.Tensor):
+def compute_transition_matrix(logits, labels):
     
     n_classes = logits.size(1)
-    probs = F.softmax(logits, dim=1)  # (m, n_classes)
+    probs = F.softmax(logits, dim=1)
     transition_matrix = torch.full((n_classes, n_classes), 1/n_classes, dtype=torch.float32)
 
     for i in range(n_classes):

@@ -1,5 +1,13 @@
 # MEDIC++
 
+### 2025.10.31
+
+1. Add the algorithm **Balanced Direction from Multifarious Choices: Arithmetic Meta-Learning for Domain Generalization** to the `v2` branch of our repository. You can set the `algorithm` in `config.py` to `arith` to enable it. We recommend using a smaller learning rate than MEDIC.
+2. Remove the evaluation metric **H-score**, as we are still uncertain about its validity. However, you can still find it in our previous repository.
+3. Refactor parts of the code and fix some bugs.
+
+
+
 ### 1. Introduction
 
 This repository contains the implementation of the unreleased paper **Exploring Dualistic Meta-Learning to Enhance Domain Generalization in Open Set Scenarios**, entended from our *ICCV 2023* paper **Generalizable Decision Boundaries: Dualistic Meta-Learning for Open Set Domain Generalization**.
@@ -73,7 +81,5 @@ if dataset == 'PACS':
 then simply run:
 
 ```
-python eval.py --hits ... --save-name ... --gpu 0
+python eval.py --save-name ... --gpu 0
 ```
-
-+ *--hits (check points for H-score)*
