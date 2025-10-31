@@ -10,7 +10,7 @@
 
 ### 1. Introduction
 
-This repository contains the implementation of the unreleased paper **Exploring Dualistic Meta-Learning to Enhance Domain Generalization in Open Set Scenarios**, entended from our *ICCV 2023* paper **Generalizable Decision Boundaries: Dualistic Meta-Learning for Open Set Domain Generalization**.
+This repository contains the implementation of the under-review paper **Exploring Dualistic Meta-Learning to Enhance Domain Generalization in Open Set Scenarios**, entended from our *ICCV 2023* paper **Generalizable Decision Boundaries: Dualistic Meta-Learning for Open Set Domain Generalization**.
 
 ![image-20231216120523727](imgs/image-20231216120523727.png)
 
