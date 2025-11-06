@@ -4,11 +4,20 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.hub import load_state_dict_from_url
-from torchvision.models.resnet import model_urls
 from torch.nn.parameter import Parameter
 
 from functools import partial
 from .gfnet import GFNetPyramid
+
+
+model_urls = {
+'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
+'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
+'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
+'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
+'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
+'gfnet-h-ti': '/data/wxr/github/MEDIC-plus/save/model/pretrain/gfnet-h-ti.pth',
+}
 
 
 Parameter.fast = None
@@ -393,7 +402,7 @@ def resnet50_fast(progress=True):
     return model
     
 
-def gfnet_fast(model_path, progress=True):
+def gfnet_fast():
     model = GFNetPyramid(
         img_size=224, 
         patch_size=4, embed_dim=[64, 128, 256, 512], depth=[3, 3, 10, 3],
@@ -403,7 +412,7 @@ def gfnet_fast(model_path, progress=True):
 
     replace_layer(model)
 
-    state_dict = torch.load(model_path)
+    state_dict = torch.load(model_urls['gfnet-h-ti'], weights_only=False)
     model.load_state_dict(state_dict['model'], strict=False)
     del model.head
 

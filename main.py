@@ -143,7 +143,7 @@ if __name__ == '__main__':
     elif net_name == "convnet":
         net = muticlassifier(net=ConvNet(), num_classes=num_classes, feature_dim=256)
     elif net_name == 'gfnet':
-        net = muticlassifier(net=gfnet_fast("/data0/xiran/MEDIC-plus-vit/save/model/pretrain/gfnet-h-ti.pth"), num_classes=num_classes, feature_dim=512)
+        net = muticlassifier(net=gfnet_fast(), num_classes=num_classes, feature_dim=512)
 
     net = net.to(device)
     
@@ -156,7 +156,7 @@ if __name__ == '__main__':
 
     if num_epoch_before != 0:
         logger.log('Loading state dict...')  
-        net.load_state_dict(torch.load(model_val_path))
+        net.load_state_dict(torch.load(model_val_path, weights_only=False))
         for epoch in range(num_epoch_before):
             scheduler.step()
         logger.log_params(

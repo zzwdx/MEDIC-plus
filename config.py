@@ -1,7 +1,6 @@
 # config.py
 import argparse
 import os
-import torch
 
 
 def get_args():
@@ -97,14 +96,14 @@ def get_args():
     parser.add_argument('--random-split', action='store_true')
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--batch-size', type=int, default=16)
-    parser.add_argument('--algorithm', default='medic') # arith
+    parser.add_argument('--algorithm', default='medic') # medic, arith
     parser.add_argument('--task-d', type=int, default=3)
     parser.add_argument('--task-c', type=int, default=3)
     parser.add_argument('--task-per-step', nargs='+', type=int, default=[3, 3, 3])
     parser.add_argument('--weight-per-step', nargs='+', type=float, default=[1.5, 1, 0.5], help='arith only')
     parser.add_argument('--selection-mode', default='random') # random, hard
 
-    parser.add_argument('--net-name', default='resnet50')
+    parser.add_argument('--net-name', default='resnet50') # resnet18, resnet50, convnet, gfnet
     parser.add_argument('--optimize-method', default="SGD")
     parser.add_argument('--schedule-method', default='StepLR')
     parser.add_argument('--num-epoch', type=int, default=6000)
