@@ -25,7 +25,10 @@ def divide_list(lst, n):
     return divided_list
 
 
-def split_classes(classes_list, index_list, n):
+def split_classes(classes_dict, n):
+    classes_list = list(classes_dict.keys())
+    index_list = list(classes_dict.values())
+    
     new_classes_list = divide_list(classes_list, n)
     new_index_list = divide_list(index_list, n)
 

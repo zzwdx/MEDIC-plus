@@ -31,7 +31,6 @@ if __name__ == '__main__':
     num_classes = len(known_classes)
 
     domain_index_list = [i for i in range(num_domain)]
-    class_index_list = [i for i in range(num_classes)]
 
     num_group = 10 if num_classes >= 10 else num_classes
 
@@ -41,7 +40,7 @@ if __name__ == '__main__':
         num_group = 20
 
     group_index_list = [i for i in range(num_group)]
-    classes_partition = split_classes(classes_list=known_classes, index_list=class_index_list, n=num_group)
+    classes_partition = split_classes(classes_dict={cls: idx for idx, cls in enumerate(known_classes)}, n=num_group)
     group_length_list = [len(g) for g in classes_partition]
 
 
