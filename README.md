@@ -2,18 +2,15 @@
 
 ### 2025.11.06
 
+Newly released updates to the `v2` branch: 
 1. Fix the incompatibility issue between `model_urls` and newer versions of **torchvision**.
 2. Address several runtime warnings.
-
-
 
 ### 2025.10.31
 
 1. Add the algorithm **Balanced Direction from Multifarious Choices: Arithmetic Meta-Learning for Domain Generalization** to the `v2` branch of our repository. You can set the `algorithm` in `config.py` to `arith` to enable it. We recommend using a smaller learning rate than MEDIC.
 2. Remove the evaluation metric **H-score**, as we are still uncertain about its validity. However, you can still find it in our previous repository.
 3. Refactor parts of the code and fix some bugs.
-
-
 
 ### 1. Introduction
 
