@@ -1,4 +1,6 @@
+import torch
 from torch import optim
+
 
 def get_optimizer(net, instr="SGD", **options):    
     optimizer_map = {
@@ -13,6 +15,11 @@ def get_optimizer(net, instr="SGD", **options):
             "params": net.parameters(),
             "lr": None, # <require value>
             "weight_decay": 0,
+        }),
+        "AdamW": (optim.AdamW, {
+            "params": net.parameters(),
+            "lr": None, # <require value>
+            "weight_decay": 0,
         })
     }
     
@@ -20,6 +27,7 @@ def get_optimizer(net, instr="SGD", **options):
     args.update(options)
 
     return optimizer(**args)
+    
 
 def get_scheduler(optimizer, instr="StepLR", **options):
     scheduler_map = {

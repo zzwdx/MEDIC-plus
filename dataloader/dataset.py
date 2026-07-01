@@ -3,7 +3,9 @@ import os.path
 from torch.utils.data import Dataset
 from torchvision.datasets.folder import make_dataset, default_loader
 
+
 IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
+
 
 class SingleClassData(Dataset):
     def __init__(self, root_dir, domain, classes, domain_label=-1, classes_label=-1, transform=None, loader=default_loader):          
@@ -49,7 +51,7 @@ class SingleClassData(Dataset):
         return img, label, self.domain_label
 
 
-class SingleDomainData(Dataset):
+class MultiClassData(Dataset):
     def __init__(self, root_dir, domain, classes, domain_label=-1, get_classes_label=True, class_to_idx=None, transform=None, loader=default_loader):          
         
         if not os.path.isdir(root_dir):
@@ -98,6 +100,7 @@ class SingleDomainData(Dataset):
             img = self.transform(img)
 
         return img, label, self.domain_label
+
 
 class MultiDomainData(Dataset):
     def __init__(self, root_dir, domain, classes, domain_class_dict=None, get_domain_label=False, get_classes_label=True, transform=None, loader=default_loader):          

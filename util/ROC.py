@@ -1,6 +1,7 @@
 import torch
 import math
 
+
 def calculate_AUC(curve_x, curve_y):
     AUC = 0
     for i in range(len(curve_x)-1):
@@ -9,6 +10,7 @@ def calculate_AUC(curve_x, curve_y):
         AUC += h*w
 
     return AUC
+    
 
 def generate_OSCR(argmax_k, conf_k, label, conf_u):
     num_samples = len(conf_k) + len(conf_u)

@@ -12,6 +12,12 @@ def calculate_acc(output, label):
     return num_correct / len(output)
 
 
+def calculate_loss(output, label):
+    criterion = nn.CrossEntropyLoss()
+    loss = criterion(output, label)
+    return loss.item() / len(output)
+
+
 def generate_logits(net, loader, device="cpu"):
     net.eval()         
 
@@ -65,7 +71,9 @@ def eval_all(net, val_k, test_k, test_u, log_path, epoch=-1, device="cpu"):
     if val_k != None:
         output_v_sum, _, label_v_sum = generate_logits(net=net, loader=val_k, device=device)
         val_acc = calculate_acc(output_v_sum, label_v_sum)
-        log('Epoch: {} Acc: {:.4f} ({})'.format(epoch+1, val_acc, "Val"), log_path) 
+        val_loss = calculate_loss(output_v_sum, label_v_sum)
+        log('Epoch: {} Acc: {:.4f} ({})'.format(epoch+1, val_acc, "Val"), log_path)
+        log('Epoch: {} Loss: {:.4f} ({})'.format(epoch+1, val_loss, "Val"), log_path) 
     else: 
         val_acc = 0
 

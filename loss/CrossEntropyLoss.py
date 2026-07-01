@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+
 class CrossEntropyOH(nn.Module):
     def __init__(self):
         super(CrossEntropyOH, self).__init__()

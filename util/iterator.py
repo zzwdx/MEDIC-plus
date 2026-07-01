@@ -1,40 +1,5 @@
 import torch
 import random
-
-def split_classes(classes_list, index_list, n):
-    for i in range(0, len(classes_list), n):
-        classes = classes_list[i:i + n]
-        index = index_list[i:i+n]
-        class_to_idx = dict(zip(classes, index))
-        yield classes, class_to_idx
-
-
-def shuffle_list(lst):
-    return random.sample(lst, len(lst))
-
-
-def divide_list(lst, n):
-    length = len(lst)
-    quotient = length // n
-    remainder = length % n
-
-    divided_list = []
-    start = 0
-
-    for i in range(n):
-        size = quotient + 1 if i < remainder else quotient
-        end = start + size
-        divided_list.append(lst[start:end])
-        start = end
-
-    return divided_list
-
-
-def get_parameters(model):
-    # note : you can direct manipulate these data reference which is related to the original models
-    parameters = dict(model.named_parameters())
-    states = dict(model.named_buffers())
-    return parameters, states
         
 
 class ForeverDataIterator:
@@ -95,7 +60,7 @@ class ConnectedDataIterator:
 
         return data_sum[rand_index], label_sum[rand_index]
 
-    def next(self, batch_size=None):
+    def next(self, all=False, batch_size=None):
 
         if batch_size is None:
             batch_size = self.batch_size
@@ -113,6 +78,9 @@ class ConnectedDataIterator:
         
         data_sum = torch.cat(data_sum, dim=0)
         label_sum = torch.cat(label_sum, dim=0)
+
+        if all == True:
+            return data_sum, label_sum
         
         rand_index = random.sample([i for i in range(len(data_sum))], batch_size)
 
