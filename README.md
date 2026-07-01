@@ -1,5 +1,9 @@
 # MEDIC++
 
+### 2026.07.01
+
+1. Merge the `v2` branch into `main`.
+
 ### 2025.11.06
 
 Newly released updates to the `v2` branch: 
