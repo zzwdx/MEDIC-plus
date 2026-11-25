@@ -82,9 +82,9 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-    test_k, *_ = get_dataloader(root_dir=root_dir, domain=target_domain, classes=known_classes, batch_size=batch_size, get_domain_label=False, get_class_label=True, instr="test", small_img=small_img, shuffle=False, drop_last=False, num_workers=4)
+    test_k, *_ = get_dataloader(root_dir=root_dir, domain=target_domain, classes=known_classes, batch_size=batch_size, instr="test", small_img=small_img, shuffle=False, drop_last=False, num_workers=4)
     if len(unknown_classes) > 0:
-        test_u, *_ = get_dataloader(root_dir=root_dir, domain=target_domain, classes=unknown_classes, batch_size=batch_size, get_domain_label=False, get_class_label=False, instr="test", small_img=small_img, shuffle=False, drop_last=False, num_workers=4)    
+        test_u, *_ = get_dataloader(root_dir=root_dir, domain=target_domain, classes=unknown_classes, batch_size=batch_size, labeled=False, instr="test", small_img=small_img, shuffle=False, drop_last=False, num_workers=4)    
     else:
         test_u = None
 

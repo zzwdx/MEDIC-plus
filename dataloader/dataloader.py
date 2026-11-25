@@ -1,6 +1,6 @@
 from torchvision import transforms
 from torch.utils.data import DataLoader, ConcatDataset, random_split
-from dataloader.dataset import SingleClassData, MultiClassData, MultiDomainData
+from dataloader.dataset import DomainDataset
 from util.iterator import *
 
 
@@ -41,36 +41,28 @@ def get_transform(instr, small_img=False, color_jitter=True, random_grayscale=Tr
     return transform_map[instr]
 
 
+def _make_multi_domain_dataset(root_dir, domain, classes, transform, labeled=True):
+    domain = domain if isinstance(domain, list) else [domain]
+    return DomainDataset(
+        root_dir=root_dir, domain=domain, classes=classes,
+        labeled=labeled, transform=transform
+    )
+
+
 def get_dataloader(
     root_dir, domain, classes, batch_size,
-    domain_class_dict=None, get_domain_label=True, get_class_label=True,
     instr="train", small_img=False, shuffle=True, drop_last=True,
-    num_workers=4, split_rate=0.8, crossval=False
+    num_workers=4, split_rate=0.8, crossval=False, labeled=True
 ):
-    domain = domain if isinstance(domain, list) else [domain]
-
     transform = get_transform(instr, small_img=small_img)
 
     if isinstance(root_dir, list):
-        datasets = [
-            MultiDomainData(
-                root_dir=path, domain=domain, classes=classes,
-                domain_class_dict=domain_class_dict,
-                get_domain_label=get_domain_label,
-                get_classes_label=get_class_label,
-                transform=transform
-            )
+        dataset = ConcatDataset([
+            _make_multi_domain_dataset(path, domain, classes, transform, labeled)
             for path in root_dir
-        ]
-        dataset = ConcatDataset(datasets)
+        ])
     else:
-        dataset = MultiDomainData(
-            root_dir=root_dir, domain=domain, classes=classes,
-            domain_class_dict=domain_class_dict,
-            get_domain_label=get_domain_label,
-            get_classes_label=get_class_label,
-            transform=transform
-        )
+        dataset = _make_multi_domain_dataset(root_dir, domain, classes, transform, labeled)
 
     val_loader = None
     if crossval:
@@ -91,31 +83,26 @@ def get_dataloader(
     return dataloader, val_loader
 
 
+def _make_class_group_dataset(root_dir, domain, cls_info, transform):
+    return DomainDataset(
+        root_dir=root_dir, domain=domain, classes=cls_info.keys(),
+        class_to_idx=cls_info, transform=transform
+    )
+
+
 def get_domain_specific_dataloader(
-    root_dir, domain, classes, classes_partition,
+    root_dir, domain, classes_partition,
     batch_size, small_img, split_rate=0.8,
     crossval=False, val_workers=4
 ):
     domain_specific_loader, val_list = [], []
-
-    is_single_class = len(classes_partition) == len(classes)
     transform = get_transform("train", small_img=small_img)
 
     for dom in domain:
         dataloader_list = []
 
-        for i, cls_info in enumerate(classes) if is_single_class else enumerate(classes_partition):
-            if is_single_class:
-                dataset = SingleClassData(
-                    root_dir=root_dir, domain=dom, classes=cls_info,
-                    domain_label=-1, classes_label=i, transform=transform
-                )
-            else:
-                dataset = MultiClassData(
-                    root_dir=root_dir, domain=dom, classes=cls_info.keys(),
-                    domain_label=-1, get_classes_label=True,
-                    class_to_idx=cls_info, transform=transform
-                )
+        for cls_info in classes_partition:
+            dataset = _make_class_group_dataset(root_dir, dom, cls_info, transform)
 
             if crossval:
                 train_size = int(len(dataset) * split_rate)

@@ -110,6 +110,7 @@ def get_args():
     parser.add_argument('--eval-step', type=int, default=300)
     parser.add_argument('--lr', type=float, default=2e-4) # Alpha (meta-lr) has been calculated in the following code, so it is set to 1/t of the default learning rate.
     parser.add_argument('--meta-lr', type=float, default=1e-2)
+    parser.add_argument('--momentum', type=float, default=0.9)
     parser.add_argument('--nesterov', action='store_true')
     parser.add_argument('--without-cls', action='store_true')
     parser.add_argument('--without-bcls', action='store_true')
@@ -151,6 +152,7 @@ num_epoch = args.num_epoch
 eval_step = args.eval_step
 lr = args.lr
 meta_lr = args.meta_lr
+momentum = args.momentum
 nesterov = args.nesterov
 without_cls = args.without_cls
 without_bcls = args.without_bcls

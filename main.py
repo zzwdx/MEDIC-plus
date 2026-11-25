@@ -67,6 +67,7 @@ if __name__ == '__main__':
         OptimizeMethod=optimize_method,
         LearningRate=lr,
         MetaLearningRate=meta_lr,
+        Momentum=momentum,
         WithoutCloseSetClassifier=without_cls,
         WithoutBinaryClassifier=without_bcls,
         ShareParameter=share_param
@@ -75,7 +76,6 @@ if __name__ == '__main__':
     domain_specific_loader, val_k = get_domain_specific_dataloader(
         root_dir=train_dir, 
         domain=source_domain, 
-        classes=known_classes, 
         classes_partition=classes_partition, 
         batch_size=sub_batch_size, 
         small_img=small_img, 
@@ -88,8 +88,6 @@ if __name__ == '__main__':
             domain=source_domain, 
             classes=known_classes, 
             batch_size=batch_size, 
-            get_domain_label=False, 
-            get_class_label=True, 
             instr="val", 
             small_img=small_img, 
             shuffle=False, 
@@ -102,8 +100,6 @@ if __name__ == '__main__':
         domain=target_domain, 
         classes=known_classes, 
         batch_size=batch_size, 
-        get_domain_label=False, 
-        get_class_label=True, 
         instr="test", 
         small_img=small_img, 
         shuffle=False, 
@@ -117,8 +113,7 @@ if __name__ == '__main__':
             domain=target_domain, 
             classes=unknown_classes, 
             batch_size=batch_size, 
-            get_domain_label=False, 
-            get_class_label=False, 
+            labeled=False,
             instr="test", 
             small_img=small_img, 
             shuffle=False, 
@@ -147,7 +142,7 @@ if __name__ == '__main__':
     net = net.to(device)
     
     if optimize_method == 'SGD':
-        optimizer = get_optimizer(net=net, instr=optimize_method, lr=lr, nesterov=nesterov)
+        optimizer = get_optimizer(net=net, instr=optimize_method, lr=lr, momentum=momentum, nesterov=nesterov)
         scheduler = get_scheduler(optimizer=optimizer, instr=schedule_method, step_size=int(num_epoch*0.8), gamma=0.1)
     elif optimize_method in ['Adam', 'AdamW']:
         optimizer = get_optimizer(net=net, instr=optimize_method, lr=lr)
